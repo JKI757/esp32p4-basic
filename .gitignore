@@ -1,0 +1,45 @@
+# ESP-IDF build artifacts
+build/
+sdkconfig
+sdkconfig.old
+dependencies.lock
+managed_components/
+
+# CMake build artifacts
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.ninja
+*.ninja_deps
+*.ninja_log
+
+# Visual Studio Code
+.vscode/
+.clangd
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# DevContainer
+.devcontainer/
+
+# Bootloader artifacts
+bootloader-flash_args
+app-flash_args
+bootloader-prefix/
+
+# Log files
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+*~
+
+# IDE files
+*.swp
+*.swo
+.idea/

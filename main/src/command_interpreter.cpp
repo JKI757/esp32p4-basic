@@ -388,10 +388,25 @@ std::string CommandInterpreter::generate_connect_response(const std::vector<std:
         return "Usage: connect <index>\nExample: connect 0\nUse 'list' to see available networks.";
     }
     
-    int index;
-    try {
-        index = std::stoi(args[1]);
-    } catch (const std::exception&) {
+    // Parse index manually since exceptions are disabled in embedded environment
+    int index = -1;
+    const std::string& index_str = args[1];
+    bool valid_number = true;
+    
+    // Check if string contains only digits
+    for (char c : index_str) {
+        if (!std::isdigit(c)) {
+            valid_number = false;
+            break;
+        }
+    }
+    
+    if (valid_number && !index_str.empty()) {
+        index = 0;
+        for (char c : index_str) {
+            index = index * 10 + (c - '0');
+        }
+    } else {
         return "Invalid network index. Please provide a valid number.";
     }
     

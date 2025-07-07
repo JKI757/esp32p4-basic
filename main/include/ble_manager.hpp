@@ -6,6 +6,12 @@
 
 #pragma once
 
+// NOTE: ESP-IDF Embedded Development Constraints
+// - No exception handling (-fno-exceptions)
+// - No RTTI (-fno-rtti) 
+// - Use error codes and boolean returns instead of exceptions
+// - Memory management through ESP-IDF heap functions
+
 #include <string>
 #include <memory>
 #include <functional>

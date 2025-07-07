@@ -1,5 +1,11 @@
 #pragma once
 
+// NOTE: This is an embedded project using ESP-IDF framework
+// - Exception handling is disabled (-fno-exceptions)
+// - RTTI is disabled (-fno-rtti)
+// - Use manual error checking instead of try/catch blocks
+// - Prefer C-style error codes or boolean returns for error handling
+
 #include <string>
 #include <vector>
 #include <functional>

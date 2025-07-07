@@ -20,8 +20,9 @@
 extern "C" {
 #endif
 
-#include "host/ble_hs.h"
-#include "host/ble_uuid.h"
+#include "nimble/ble.h"
+#include "esp_nimble_hci.h"
+#include "nimble/nimble_port.h"
 
 #ifdef __cplusplus
 }
@@ -42,18 +43,10 @@ class BLEManager {
 public:
     static constexpr size_t MAX_DATA_LEN = 512;
     
-    // Nordic UART Service UUIDs
-    static constexpr ble_uuid128_t UART_SERVICE_UUID = 
-        BLE_UUID128_INIT(0x9e, 0xca, 0xdc, 0x24, 0x0e, 0xe5, 0xa9, 0xe0,
-                         0x93, 0xf3, 0xa3, 0xb5, 0x01, 0x00, 0x40, 0x6e);
-    
-    static constexpr ble_uuid128_t UART_RX_UUID = 
-        BLE_UUID128_INIT(0x9e, 0xca, 0xdc, 0x24, 0x0e, 0xe5, 0xa9, 0xe0,
-                         0x93, 0xf3, 0xa3, 0xb5, 0x02, 0x00, 0x40, 0x6e);
-    
-    static constexpr ble_uuid128_t UART_TX_UUID = 
-        BLE_UUID128_INIT(0x9e, 0xca, 0xdc, 0x24, 0x0e, 0xe5, 0xa9, 0xe0,
-                         0x93, 0xf3, 0xa3, 0xb5, 0x03, 0x00, 0x40, 0x6e);
+    // Nordic UART Service UUIDs (will be defined in implementation)
+    // Service:  6E400001-B5A3-F393-E0A9-E50E24DCCA9E
+    // RX Char:  6E400002-B5A3-F393-E0A9-E50E24DCCA9E  
+    // TX Char:  6E400003-B5A3-F393-E0A9-E50E24DCCA9E
 
     BLEManager();
     ~BLEManager();
@@ -97,16 +90,16 @@ public:
     void set_command_callback(std::function<std::string(const std::string&)> callback);
 
 private:
-    // BLE event handlers
-    static int gap_event_handler(struct ble_gap_event *event, void *arg);
+    // BLE event handlers (implementation specific)
+    static int gap_event_handler(void *event, void *arg);
     static int gatt_access_handler(uint16_t conn_handle, uint16_t attr_handle,
-                                   struct ble_gatt_access_ctxt *ctxt, void *arg);
+                                   void *ctxt, void *arg);
 
     // Internal methods
     void setup_gatt_service();
     bool configure_advertising_data(const std::string& device_name);
-    void handle_connection_event(struct ble_gap_event *event);
-    void handle_disconnection_event(struct ble_gap_event *event);
+    void handle_connection_event(void *event);
+    void handle_disconnection_event(void *event);
     void process_received_data(const uint8_t* data, uint16_t len);
 
     // State variables

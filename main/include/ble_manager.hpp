@@ -16,17 +16,8 @@
 #include <memory>
 #include <functional>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include "nimble/ble.h"
-#include "esp_nimble_hci.h"
-#include "nimble/nimble_port.h"
-
-#ifdef __cplusplus
-}
-#endif
+// BLE headers will be included in implementation when ready
+// For now, using stub implementation to allow compilation
 
 namespace ble_serial {
 

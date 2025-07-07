@@ -10,6 +10,5 @@ idf_component_register(SRCS "main.cpp"
                                nvs_flash
                                esp_hosted
                                esp_wifi_remote
-                               bt
                                driver
                                vfs)

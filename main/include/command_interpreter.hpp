@@ -18,6 +18,9 @@ public:
     void start_interactive_mode();
     void process_command(const std::string& command);
     
+    // BLE interface - process command and return response
+    std::string process_command_with_response(const std::string& command);
+    
     // Command handlers
     void handle_help();
     void handle_scan();
@@ -35,6 +38,15 @@ private:
     std::vector<std::string> parse_command(const std::string& command);
     void print_network_list(const std::vector<wifi_config::NetworkInfo>& networks);
     const char* auth_mode_to_string(wifi_auth_mode_t auth_mode);
+    
+    // BLE response generation methods
+    std::string generate_help_response();
+    std::string generate_scan_response();
+    std::string generate_list_response();
+    std::string generate_connect_response(const std::vector<std::string>& args);
+    std::string generate_status_response();
+    std::string generate_disconnect_response();
+    std::string format_network_list(const std::vector<wifi_config::NetworkInfo>& networks);
     
     // Member variables
     std::shared_ptr<wifi_config::WiFiManager> wifi_manager_;

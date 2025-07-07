@@ -1,6 +1,7 @@
 idf_component_register(SRCS "main.cpp"
                             "src/wifi_manager.cpp"
                             "src/command_interpreter.cpp"
+                            "src/ble_manager.cpp"
                        INCLUDE_DIRS "."
                                    "include"
                        REQUIRES esp_wifi
@@ -9,5 +10,6 @@ idf_component_register(SRCS "main.cpp"
                                nvs_flash
                                esp_hosted
                                esp_wifi_remote
+                               bt
                                driver
                                vfs)

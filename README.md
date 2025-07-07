@@ -1,11 +1,20 @@
-# ESP32-P4 WiFi Configuration Tool
+# ESP32-P4 Foundational Firmware
 
 | Supported Targets | ESP32-P4 |
 | ----------------- | ----- |
 
 ## Overview
 
-This project implements a WiFi configuration system using an ESP32-P4 as the main processor and an ESP32-C6 as a WiFi coprocessor connected via SDIO. The system provides an interactive USB interface for scanning and connecting to WiFi networks, with the architecture designed for extensibility to include a touchscreen GUI interface.
+This project serves as a **foundational firmware framework** for ESP32-P4 based applications, starting with a robust WiFi configuration system. Built using modern C++ practices and designed for extensibility, this codebase provides the groundwork for complex multimedia and IoT applications.
+
+**Current Implementation**: WiFi configuration system using ESP32-P4 + ESP32-C6 architecture with interactive USB interface.
+
+**Future Vision**: This foundation will evolve to support:
+- **Touchscreen GUI Control**: LVGL-based user interfaces with gesture support
+- **Audio Processing**: Real-time audio ingest, processing, and playback via ES8311 codec
+- **Peripheral Management**: Comprehensive control of sensors, actuators, and external devices
+- **Multimedia Applications**: Camera integration, video processing, and display management
+- **Advanced Networking**: Mesh networking, IoT protocols, and cloud connectivity
 
 ## Architecture
 
@@ -20,13 +29,23 @@ This project implements a WiFi configuration system using an ESP32-P4 as the mai
 - CommandInterpreter class: Provides interactive USB Serial JTAG interface
 - Event-driven architecture with automatic reconnection capabilities
 
-## Key Features
+## Current Features (v1.0)
 
 - **WiFi Management**: Network scanning with RSSI-based sorting, interactive connection
 - **USB Interface**: Real-time command processing with interactive commands
 - **ESP-Hosted Integration**: Seamless P4↔C6 communication over SDIO
-- **Modern C++**: Smart pointers, STL containers, RAII patterns
-- **Extensible Design**: Ready for GUI integration with touchscreen support
+- **Modern C++ Architecture**: Smart pointers, STL containers, RAII patterns
+- **Extensible Design**: Modular architecture ready for feature expansion
+
+## Planned Features (Future Releases)
+
+- **Touch GUI Interface**: LVGL-based touchscreen controls with terminal output display
+- **Audio System**: Real-time audio capture, processing, and playback
+- **Camera Integration**: Video capture and processing capabilities
+- **Sensor Management**: Unified interface for multiple sensor types
+- **Device Control**: GPIO, I2C, SPI peripheral management
+- **Data Logging**: Local storage and cloud synchronization
+- **OTA Updates**: Secure firmware update system
 
 ## Project Structure
 
@@ -138,10 +157,38 @@ This project is designed for easy extension with a touchscreen GUI:
 
 For technical queries, refer to the [ESP-IDF documentation](https://docs.espressif.com/projects/esp-idf/en/latest/) or [ESP-Hosted documentation](https://github.com/espressif/esp-hosted).
 
-## Future Development
+## Development Roadmap
 
-This project serves as a foundation for more advanced features:
-- Touchscreen GUI interface using LVGL
-- Network configuration persistence
-- Advanced WiFi features (enterprise security, mesh networking)
-- Integration with other ESP32-P4 peripherals (camera, audio, etc.)
+### Phase 1: Foundation ✅ (Current)
+- [x] ESP32-P4 + ESP32-C6 architecture
+- [x] WiFi configuration system
+- [x] Modern C++ framework
+- [x] Interactive USB interface
+
+### Phase 2: GUI Interface 🔄 (In Progress)
+- [ ] LVGL integration with touchscreen
+- [ ] Terminal output display with action buttons
+- [ ] Touch-responsive WiFi configuration
+- [ ] System status dashboard
+
+### Phase 3: Audio System 📋 (Planned)
+- [ ] ES8311 codec integration
+- [ ] Real-time audio capture
+- [ ] Audio processing pipeline
+- [ ] Playback control system
+
+### Phase 4: Advanced Features 📋 (Future)
+- [ ] Camera integration and processing
+- [ ] Sensor management framework
+- [ ] Device control interfaces
+- [ ] Cloud connectivity and OTA updates
+
+## Contributing
+
+This project is designed as a learning platform and foundation for ESP32-P4 development. The modular architecture makes it easy to:
+- Add new peripheral drivers
+- Implement additional UI components
+- Extend networking capabilities
+- Integrate audio/video processing
+
+Each major feature is implemented as a separate class with clean interfaces, making the codebase approachable for developers of different skill levels.

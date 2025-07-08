@@ -12,12 +12,20 @@
 #include <memory>
 #include "wifi_manager.hpp"
 
+// Forward declaration for BLE manager
+namespace ble_serial {
+    class BLEManager;
+}
+
 namespace command_interface {
 
 class CommandInterpreter {
 public:
     explicit CommandInterpreter(std::shared_ptr<wifi_config::WiFiManager> wifi_manager);
     ~CommandInterpreter();
+    
+    // Set BLE manager for BLE commands
+    void set_ble_manager(std::shared_ptr<ble_serial::BLEManager> ble_manager);
     
     // Core functionality
     bool initialize();
@@ -27,13 +35,22 @@ public:
     // BLE interface - process command and return response
     std::string process_command_with_response(const std::string& command);
     
-    // Command handlers
+    // WiFi command handlers
     void handle_help();
     void handle_scan();
     void handle_list();
     void handle_connect(const std::vector<std::string>& args);
     void handle_status();
     void handle_disconnect();
+    
+    // BLE command handlers
+    void handle_ble_start();
+    void handle_ble_stop(); 
+    void handle_ble_status();
+    void handle_ble_name(const std::vector<std::string>& args);
+    void handle_ble_scan(const std::vector<std::string>& args);
+    void handle_ble_debug();
+    
     void handle_unknown_command(const std::string& command);
     
 private:
@@ -52,10 +69,17 @@ private:
     std::string generate_connect_response(const std::vector<std::string>& args);
     std::string generate_status_response();
     std::string generate_disconnect_response();
+    std::string generate_ble_start_response();
+    std::string generate_ble_stop_response();
+    std::string generate_ble_status_response();
+    std::string generate_ble_name_response(const std::vector<std::string>& args);
+    std::string generate_ble_scan_response(const std::vector<std::string>& args);
+    std::string generate_ble_debug_response();
     std::string format_network_list(const std::vector<wifi_config::NetworkInfo>& networks);
     
     // Member variables
     std::shared_ptr<wifi_config::WiFiManager> wifi_manager_;
+    std::shared_ptr<ble_serial::BLEManager> ble_manager_;
     bool initialized_;
     
     // Constants

@@ -17,6 +17,14 @@ extern "C" void app_main(void)
         return;
     }
     
+    // Create BLE manager for wireless command access
+    auto ble_manager = std::make_shared<ble_serial::BLEManager>();
+    if (!ble_manager->initialize()) {
+        ESP_LOGE(TAG, "Failed to initialize BLE Manager");
+        ESP_LOGE(TAG, "BLE functionality will not be available");
+        return;
+    }
+    
     // Create command interpreter
     auto command_interpreter = std::make_unique<command_interface::CommandInterpreter>(wifi_manager);
     if (!command_interpreter->initialize()) {
@@ -24,21 +32,19 @@ extern "C" void app_main(void)
         return;
     }
     
-    // Create BLE manager for wireless command access
-    auto ble_manager = std::make_unique<ble_serial::BLEManager>();
-    if (!ble_manager->initialize()) {
-        ESP_LOGE(TAG, "Failed to initialize BLE Manager");
-        return;
-    }
+    // Connect BLE manager to command interpreter
+    command_interpreter->set_ble_manager(ble_manager);
     
-    // Connect BLE to command interpreter
+    // Connect BLE to command interpreter for wireless access
     ble_manager->set_command_callback([&command_interpreter](const std::string& command) -> std::string {
         return command_interpreter->process_command_with_response(command);
     });
     
     ESP_LOGI(TAG, "System initialized successfully");
-    ESP_LOGI(TAG, "WiFi commands available via USB Serial JTAG and BLE");
-    ESP_LOGI(TAG, "BLE Device Name: ESP32-P4-WiFi");
+    ESP_LOGI(TAG, "WiFi + BLE commands available via USB Serial JTAG");
+    ESP_LOGI(TAG, "BLE commands: ble_start, ble_stop, ble_status, ble_name, ble_scan, ble_debug");
+    ESP_LOGI(TAG, "BLE implementation: ESP-Hosted NimBLE with Nordic UART Service");
+    ESP_LOGI(TAG, "Architecture: ESP32-P4 (host) + ESP32-C6 (controller) via VHCI/SDIO");
     
     // Start interactive command mode (USB Serial JTAG)
     command_interpreter->start_interactive_mode();

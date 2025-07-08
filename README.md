@@ -7,7 +7,7 @@
 
 This project serves as a **foundational firmware framework** for ESP32-P4 based applications, starting with a robust WiFi configuration system. Built using modern C++ practices and designed for extensibility, this codebase provides the groundwork for complex multimedia and IoT applications.
 
-**Current Implementation**: WiFi configuration system using ESP32-P4 + ESP32-C6 architecture with interactive USB interface.
+**Current Implementation**: WiFi configuration and BLE wireless system using ESP32-P4 + ESP32-C6 architecture with interactive USB interface.
 
 **Future Vision**: This foundation will evolve to support:
 - **Touchscreen GUI Control**: LVGL-based user interfaces with gesture support
@@ -26,13 +26,15 @@ This project serves as a **foundational firmware framework** for ESP32-P4 based 
 **Software Architecture:**
 - Modern C++ project structure with proper separation of concerns
 - WiFiManager class: Handles ESP32-C6 communication and WiFi operations
+- BLEManager class: Provides wireless BLE Nordic UART Service interface
 - CommandInterpreter class: Provides interactive USB Serial JTAG interface
 - Event-driven architecture with automatic reconnection capabilities
 
 ## Current Features (v1.0)
 
 - **WiFi Management**: Network scanning with RSSI-based sorting, interactive connection
-- **USB Interface**: Real-time command processing with interactive commands
+- **BLE Wireless Interface**: Nordic UART Service with wireless command access
+- **USB Interface**: Real-time command processing with interactive commands  
 - **ESP-Hosted Integration**: Seamless P4↔C6 communication over SDIO
 - **Modern C++ Architecture**: Smart pointers, STL containers, RAII patterns
 - **Extensible Design**: Modular architecture ready for feature expansion
@@ -52,12 +54,14 @@ This project serves as a **foundational firmware framework** for ESP32-P4 based 
 ```
 p4-base/
 ├── main/
-│   ├── main.cpp                     # Clean entry point (30 lines)
+│   ├── main.cpp                     # Clean entry point (50 lines)
 │   ├── include/
 │   │   ├── wifi_manager.hpp         # WiFi management class interface
+│   │   ├── ble_manager.hpp          # BLE Nordic UART Service interface
 │   │   └── command_interpreter.hpp  # USB command interface
 │   ├── src/
 │   │   ├── wifi_manager.cpp         # WiFi implementation using ESP-Hosted
+│   │   ├── ble_manager.cpp          # BLE implementation using ESP-Hosted NimBLE
 │   │   └── command_interpreter.cpp  # Interactive command processing
 │   ├── CMakeLists.txt              # Component registration
 │   └── idf_component.yml           # ESP-Hosted dependencies
@@ -102,11 +106,22 @@ To exit the serial monitor, type `Ctrl-]`.
 
 Once flashed and running, connect via USB Serial JTAG and use these commands:
 
+**WiFi Commands:**
 - `scan` or `s`: Scan for available WiFi networks
 - `list` or `l`: List previously scanned networks  
-- `connect <index>` or `c <index>`: Connect to network by index
+- `connect <ssid> <password>`: Connect to WiFi network
 - `status` or `st`: Show current WiFi connection status
 - `disconnect` or `d`: Disconnect from current network
+
+**BLE Commands:**
+- `ble_start` or `bs`: Start BLE advertising (Nordic UART Service)
+- `ble_stop` or `bp`: Stop BLE advertising
+- `ble_status` or `bt`: Show detailed BLE status
+- `ble_scan [duration]` or `bsc`: Scan for nearby BLE devices
+- `ble_name <name>` or `bn`: Set BLE device name
+- `ble_debug` or `bd`: Show comprehensive BLE debug information
+
+**General:**
 - `help` or `h`: Show command help
 
 ## Example Output

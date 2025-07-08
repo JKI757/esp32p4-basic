@@ -15,9 +15,14 @@
 #include <string>
 #include <memory>
 #include <functional>
+#include <vector>
 
-// BLE headers will be included in implementation when ready
-// For now, using stub implementation to allow compilation
+// Forward declarations for NimBLE types (headers included in implementation)
+struct ble_gap_event;
+struct ble_gatt_access_ctxt;
+
+// Include necessary types for class definition
+#define BLE_HS_CONN_HANDLE_NONE (0xffff)
 
 namespace ble_serial {
 
@@ -34,7 +39,7 @@ class BLEManager {
 public:
     static constexpr size_t MAX_DATA_LEN = 512;
     
-    // Nordic UART Service UUIDs (will be defined in implementation)
+    // Nordic UART Service UUIDs (actual UUIDs defined in implementation)
     // Service:  6E400001-B5A3-F393-E0A9-E50E24DCCA9E
     // RX Char:  6E400002-B5A3-F393-E0A9-E50E24DCCA9E  
     // TX Char:  6E400003-B5A3-F393-E0A9-E50E24DCCA9E
@@ -80,30 +85,92 @@ public:
      */
     void set_command_callback(std::function<std::string(const std::string&)> callback);
 
-private:
-    // BLE event handlers (implementation specific)
-    static int gap_event_handler(void *event, void *arg);
-    static int gatt_access_handler(uint16_t conn_handle, uint16_t attr_handle,
-                                   void *ctxt, void *arg);
+    /**
+     * @brief Scan for nearby BLE devices
+     * @param scan_duration_seconds Duration to scan in seconds (default: 5)
+     * @return true if scan started successfully
+     */
+    bool start_scan(int scan_duration_seconds = 5);
 
+    /**
+     * @brief Stop ongoing BLE scan
+     * @return true if scan stopped successfully
+     */
+    bool stop_scan();
+
+    /**
+     * @brief Check if BLE scan is currently active
+     * @return true if scanning
+     */
+    bool is_scanning() const;
+
+    /**
+     * @brief Get number of devices found in last scan
+     * @return Number of devices found
+     */
+    int get_scan_result_count() const;
+
+    /**
+     * @brief Get scan result by index
+     * @param index Index of device (0 to get_scan_result_count()-1)
+     * @return Device info string or empty if invalid index
+     */
+    std::string get_scan_result(int index) const;
+
+    /**
+     * @brief Get detailed BLE stack status for debugging
+     * @return Status information string
+     */
+    std::string get_debug_status() const;
+
+private:
+    // NimBLE event handlers
+    static int gap_event_handler(struct ble_gap_event *event, void *arg);
+    static int gatt_access_handler(uint16_t conn_handle, uint16_t attr_handle,
+                                   struct ble_gatt_access_ctxt *ctxt, void *arg);
+    static void on_sync_callback(void);
+    static void on_reset_callback(int reason);
+
+public:
+    // Internal methods (public for C callbacks)
+    void process_received_data(const uint8_t* data, uint16_t len);
+    void handle_connection_event(struct ble_gap_event *event);
+    void handle_disconnection_event(struct ble_gap_event *event);
+
+private:
     // Internal methods
     void setup_gatt_service();
     bool configure_advertising_data(const std::string& device_name);
-    void handle_connection_event(void *event);
-    void handle_disconnection_event(void *event);
-    void process_received_data(const uint8_t* data, uint16_t len);
+    
+    // NimBLE service setup
+    bool register_nus_service();
+    void start_advertising_internal();
 
     // State variables
     bool initialized_;
     bool advertising_;
     bool connected_;
+    bool scanning_;
     uint16_t conn_handle_;
-    uint16_t tx_char_handle_;
+    uint16_t nus_service_handle_;
+    uint16_t nus_rx_char_handle_;
+    uint16_t nus_tx_char_handle_;
+    std::string device_name_;
+    
+    // Scan results storage
+    struct ScanResult {
+        std::string address;
+        std::string name;
+        int rssi;
+        std::string service_uuids;
+    };
+    std::vector<ScanResult> scan_results_;
     
     // Command processing callback
     std::function<std::string(const std::string&)> command_callback_;
     
-    // Static instance for C callbacks
+public:
+    // Static instance for C callbacks (public for callback access)
     static BLEManager* instance_;
 };
 

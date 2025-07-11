@@ -192,7 +192,7 @@ bool BLEManager::initialize() {
     scan_results_.clear();
 
     // Start NimBLE host task
-    nimble_port_freertos_init(nullptr);
+    nimble_port_freertos_init(nimble_host_task);
 
     initialized_ = true;
     ESP_LOGI(TAG, "ESP-Hosted BLE Manager initialized successfully");
@@ -493,6 +493,12 @@ void BLEManager::on_reset_callback(int reason) {
     ESP_LOGW(TAG, "NimBLE host reset, reason: %d", reason);
 }
 
+void BLEManager::nimble_host_task(void *param) {
+    ESP_LOGI(TAG, "NimBLE host task started");
+    nimble_port_run();
+    ESP_LOGI(TAG, "NimBLE host task ended");
+}
+
 // Internal methods
 void BLEManager::setup_gatt_service() {
     ESP_LOGD(TAG, "GATT service setup handled by static definition");
@@ -549,10 +555,8 @@ void BLEManager::start_advertising_internal() {
     fields.name_len = device_name_.length();
     fields.name_is_complete = 1;
     
-    // Add NUS service UUID to advertising data
-    fields.uuids128 = &NUS_SERVICE_UUID;
-    fields.num_uuids128 = 1;
-    fields.uuids128_is_complete = 1;
+    // Note: Skipping 128-bit UUID in advertising data to avoid field size issues
+    // Service will still be discoverable via GATT service discovery
     
     int rc = ble_gap_adv_set_fields(&fields);
     if (rc != 0) {

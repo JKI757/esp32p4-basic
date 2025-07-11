@@ -130,6 +130,7 @@ private:
                                    struct ble_gatt_access_ctxt *ctxt, void *arg);
     static void on_sync_callback(void);
     static void on_reset_callback(int reason);
+    static void nimble_host_task(void *param);
 
 public:
     // Internal methods (public for C callbacks)

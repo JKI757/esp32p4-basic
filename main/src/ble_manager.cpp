@@ -24,6 +24,7 @@
 #include "os/os_mbuf.h"
 
 #include <cstring>
+#include <algorithm>
 
 namespace ble_serial {
 
@@ -179,14 +180,7 @@ bool BLEManager::initialize() {
         return false;
     }
 
-    // Get TX characteristic handle for notifications
-    rc = ble_gatts_find_chr(&NUS_SERVICE_UUID.u, &NUS_TX_CHAR_UUID.u, 
-                           nullptr, &nus_tx_char_handle_);
-    if (rc != 0) {
-        ESP_LOGW(TAG, "Could not find TX characteristic handle: %d", rc);
-    } else {
-        ESP_LOGI(TAG, "NUS TX characteristic handle: %d", nus_tx_char_handle_);
-    }
+    // TX characteristic handle will be discovered after sync callback
 
     // Clear scan results
     scan_results_.clear();
@@ -252,13 +246,50 @@ bool BLEManager::send_response(const std::string& data) {
         return false;
     }
 
-    if (data.length() > MAX_DATA_LEN) {
-        ESP_LOGW(TAG, "Data too long: %zu bytes", data.length());
+    if (nus_tx_char_handle_ == 0) {
+        ESP_LOGE(TAG, "TX characteristic handle not found");
         return false;
     }
 
-    if (nus_tx_char_handle_ == 0) {
-        ESP_LOGE(TAG, "TX characteristic handle not found");
+    // BLE characteristic MTU is typically 20-244 bytes
+    // Use conservative chunk size of 200 bytes for reliable transmission
+    const size_t CHUNK_SIZE = 200;
+    
+    if (data.length() <= CHUNK_SIZE) {
+        // Send data in single packet
+        return send_single_packet(data);
+    } else {
+        // Send data in chunks
+        ESP_LOGI(TAG, "Chunking response: %zu bytes into %zu-byte packets", 
+                data.length(), CHUNK_SIZE);
+        
+        size_t offset = 0;
+        size_t chunk_num = 0;
+        
+        while (offset < data.length()) {
+            size_t chunk_len = std::min(CHUNK_SIZE, data.length() - offset);
+            std::string chunk = data.substr(offset, chunk_len);
+            
+            if (!send_single_packet(chunk)) {
+                ESP_LOGE(TAG, "Failed to send chunk %zu", chunk_num);
+                return false;
+            }
+            
+            offset += chunk_len;
+            chunk_num++;
+            
+            // Small delay between chunks to prevent overwhelming the client
+            vTaskDelay(pdMS_TO_TICKS(50));
+        }
+        
+        ESP_LOGI(TAG, "Sent %zu bytes in %zu chunks via BLE NUS", data.length(), chunk_num);
+        return true;
+    }
+}
+
+bool BLEManager::send_single_packet(const std::string& data) {
+    if (data.length() > MAX_DATA_LEN) {
+        ESP_LOGW(TAG, "Single packet too long: %zu bytes", data.length());
         return false;
     }
 
@@ -481,6 +512,17 @@ void BLEManager::on_sync_callback(void) {
     if (rc != 0) {
         ESP_LOGE(TAG, "Failed to ensure address: %d", rc);
         return;
+    }
+    
+    // Now discover TX characteristic handle (after GATT services are registered)
+    if (instance_) {
+        rc = ble_gatts_find_chr(&NUS_SERVICE_UUID.u, &NUS_TX_CHAR_UUID.u, 
+                               nullptr, &instance_->nus_tx_char_handle_);
+        if (rc != 0) {
+            ESP_LOGW(TAG, "Could not find TX characteristic handle: %d", rc);
+        } else {
+            ESP_LOGI(TAG, "NUS TX characteristic handle: %d", instance_->nus_tx_char_handle_);
+        }
     }
     
     // Start advertising automatically

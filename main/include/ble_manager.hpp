@@ -146,6 +146,9 @@ private:
     // NimBLE service setup
     bool register_nus_service();
     void start_advertising_internal();
+    
+    // BLE data transmission helpers
+    bool send_single_packet(const std::string& data);
 
     // State variables
     bool initialized_;

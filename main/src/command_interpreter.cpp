@@ -1,5 +1,6 @@
 #include "command_interpreter.hpp"
 #include "ble_manager.hpp"
+#include "relay_manager.hpp"
 #include "esp_log.h"
 #include "driver/usb_serial_jtag.h"
 #include "esp_vfs_dev.h"
@@ -16,7 +17,7 @@ namespace command_interface {
 static const char* TAG = "CommandInterpreter";
 
 CommandInterpreter::CommandInterpreter(std::shared_ptr<wifi_config::WiFiManager> wifi_manager)
-    : wifi_manager_(wifi_manager), ble_manager_(nullptr), initialized_(false) {
+    : wifi_manager_(wifi_manager), ble_manager_(nullptr), relay_manager_(nullptr), initialized_(false) {
 }
 
 CommandInterpreter::~CommandInterpreter() {
@@ -26,6 +27,11 @@ CommandInterpreter::~CommandInterpreter() {
 void CommandInterpreter::set_ble_manager(std::shared_ptr<ble_serial::BLEManager> ble_manager) {
     ble_manager_ = ble_manager;
     ESP_LOGI(TAG, "BLE manager set for command interpreter");
+}
+
+void CommandInterpreter::set_relay_manager(std::shared_ptr<relay_control::RelayManager> relay_manager) {
+    relay_manager_ = relay_manager;
+    ESP_LOGI(TAG, "Relay manager set for command interpreter");
 }
 
 bool CommandInterpreter::initialize() {
@@ -64,20 +70,24 @@ void CommandInterpreter::setup_usb_serial() {
     }
     
     // Set USB Serial JTAG as default for stdin/stdout
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     esp_vfs_usb_serial_jtag_use_driver();
     
-    // Set line endings
+    // Set line endings  
     esp_vfs_dev_uart_port_set_rx_line_endings(0, ESP_LINE_ENDINGS_CR);
     esp_vfs_dev_uart_port_set_tx_line_endings(0, ESP_LINE_ENDINGS_CRLF);
+    #pragma GCC diagnostic pop
     
     ESP_LOGI(TAG, "USB Serial JTAG setup complete");
 }
 
 void CommandInterpreter::print_welcome_message() {
     printf("\n");
-    printf("=====================================\n");
-    printf("  ESP32-P4 WiFi Configuration Tool  \n");
-    printf("=====================================\n");
+    printf("=========================================\n");
+    printf("  ESP32-P4 Development & Control Tool  \n");
+    printf("=========================================\n");
+    printf("WiFi • BLE • Relay Control • Commands\n");
     printf("Type 'help' for available commands\n");
     printf("\n");
 }
@@ -184,6 +194,16 @@ void CommandInterpreter::process_command(const std::string& command) {
         handle_ble_scan(tokens);
     } else if (cmd == "ble_debug" || cmd == "bd") {
         handle_ble_debug();
+    } else if (cmd == "relay_on" || cmd == "ron") {
+        handle_relay_on(tokens);
+    } else if (cmd == "relay_off" || cmd == "roff") {
+        handle_relay_off(tokens);
+    } else if (cmd == "relay_toggle" || cmd == "rtog") {
+        handle_relay_toggle(tokens);
+    } else if (cmd == "relay_status" || cmd == "rst") {
+        handle_relay_status();
+    } else if (cmd == "relay_debug" || cmd == "rd") {
+        handle_relay_debug();
     } else {
         handle_unknown_command(tokens[0]);
     }
@@ -236,6 +256,16 @@ std::string CommandInterpreter::process_command_with_response(const std::string&
         return generate_ble_scan_response(tokens);
     } else if (cmd == "ble_debug" || cmd == "bd") {
         return generate_ble_debug_response();
+    } else if (cmd == "relay_on" || cmd == "ron") {
+        return generate_relay_on_response(tokens);
+    } else if (cmd == "relay_off" || cmd == "roff") {
+        return generate_relay_off_response(tokens);
+    } else if (cmd == "relay_toggle" || cmd == "rtog") {
+        return generate_relay_toggle_response(tokens);
+    } else if (cmd == "relay_status" || cmd == "rst") {
+        return generate_relay_status_response();
+    } else if (cmd == "relay_debug" || cmd == "rd") {
+        return generate_relay_debug_response();
     } else {
         return "Unknown command: '" + tokens[0] + "'. Type 'help' for available commands.";
     }
@@ -257,13 +287,21 @@ void CommandInterpreter::handle_help() {
     printf("ble_name, bn <name>        - Set BLE device name\n");
     printf("ble_scan, bsc [duration]   - Scan for BLE devices (default: 5s)\n");
     printf("ble_debug, bd              - Show detailed BLE debug info\n");
+    printf("\n--- Relay Commands (Dual Relay Board) ---\n");
+    printf("relay_on, ron <relay>      - Turn on relay (1, 2, or all)\n");
+    printf("relay_off, roff <relay>    - Turn off relay (1, 2, or all)\n");
+    printf("relay_toggle, rtog <relay> - Toggle relay (1, 2, or all)\n");
+    printf("relay_status, rst          - Show relay status\n");
+    printf("relay_debug, rd            - Show detailed relay debug info\n");
     printf("\n");
     printf("Examples:\n");
     printf("  scan\n");
     printf("  connect \"MyNetwork\" \"MyPassword\"\n");
     printf("  ble_start\n");
     printf("  ble_scan 10\n");
-    printf("  ble_debug\n");
+    printf("  relay_on 1        # Turn on relay 1\n");
+    printf("  relay_off all     # Turn off both relays\n");
+    printf("  relay_toggle 2    # Toggle relay 2\n");
     printf("\n");
 }
 
@@ -484,6 +522,137 @@ void CommandInterpreter::handle_ble_debug() {
     printf("%s\n", debug_info.c_str());
 }
 
+// Relay command handlers
+void CommandInterpreter::handle_relay_on(const std::vector<std::string>& args) {
+    if (!relay_manager_) {
+        printf("Relay manager not available (single board variant).\n");
+        return;
+    }
+
+    if (args.size() < 2) {
+        printf("Usage: relay_on <relay>\n");
+        printf("Relay options: 1, 2, all\n");
+        printf("Examples: relay_on 1, relay_on all\n");
+        return;
+    }
+
+    std::string relay_arg = args[1];
+    std::transform(relay_arg.begin(), relay_arg.end(), relay_arg.begin(), ::tolower);
+
+    relay_control::RelayManager::RelayId relay_id;
+    if (relay_arg == "1") {
+        relay_id = relay_control::RelayManager::RelayId::RELAY_1;
+    } else if (relay_arg == "2") {
+        relay_id = relay_control::RelayManager::RelayId::RELAY_2;
+    } else if (relay_arg == "all") {
+        relay_id = relay_control::RelayManager::RelayId::ALL_RELAYS;
+    } else {
+        printf("Invalid relay: %s\n", args[1].c_str());
+        printf("Valid options: 1, 2, all\n");
+        return;
+    }
+
+    if (relay_manager_->turn_on(relay_id)) {
+        printf("Successfully turned on %s\n", args[1].c_str());
+    } else {
+        printf("Failed to turn on %s\n", args[1].c_str());
+    }
+}
+
+void CommandInterpreter::handle_relay_off(const std::vector<std::string>& args) {
+    if (!relay_manager_) {
+        printf("Relay manager not available (single board variant).\n");
+        return;
+    }
+
+    if (args.size() < 2) {
+        printf("Usage: relay_off <relay>\n");
+        printf("Relay options: 1, 2, all\n");
+        printf("Examples: relay_off 1, relay_off all\n");
+        return;
+    }
+
+    std::string relay_arg = args[1];
+    std::transform(relay_arg.begin(), relay_arg.end(), relay_arg.begin(), ::tolower);
+
+    relay_control::RelayManager::RelayId relay_id;
+    if (relay_arg == "1") {
+        relay_id = relay_control::RelayManager::RelayId::RELAY_1;
+    } else if (relay_arg == "2") {
+        relay_id = relay_control::RelayManager::RelayId::RELAY_2;
+    } else if (relay_arg == "all") {
+        relay_id = relay_control::RelayManager::RelayId::ALL_RELAYS;
+    } else {
+        printf("Invalid relay: %s\n", args[1].c_str());
+        printf("Valid options: 1, 2, all\n");
+        return;
+    }
+
+    if (relay_manager_->turn_off(relay_id)) {
+        printf("Successfully turned off %s\n", args[1].c_str());
+    } else {
+        printf("Failed to turn off %s\n", args[1].c_str());
+    }
+}
+
+void CommandInterpreter::handle_relay_toggle(const std::vector<std::string>& args) {
+    if (!relay_manager_) {
+        printf("Relay manager not available (single board variant).\n");
+        return;
+    }
+
+    if (args.size() < 2) {
+        printf("Usage: relay_toggle <relay>\n");
+        printf("Relay options: 1, 2, all\n");
+        printf("Examples: relay_toggle 1, relay_toggle all\n");
+        return;
+    }
+
+    std::string relay_arg = args[1];
+    std::transform(relay_arg.begin(), relay_arg.end(), relay_arg.begin(), ::tolower);
+
+    relay_control::RelayManager::RelayId relay_id;
+    if (relay_arg == "1") {
+        relay_id = relay_control::RelayManager::RelayId::RELAY_1;
+    } else if (relay_arg == "2") {
+        relay_id = relay_control::RelayManager::RelayId::RELAY_2;
+    } else if (relay_arg == "all") {
+        relay_id = relay_control::RelayManager::RelayId::ALL_RELAYS;
+    } else {
+        printf("Invalid relay: %s\n", args[1].c_str());
+        printf("Valid options: 1, 2, all\n");
+        return;
+    }
+
+    if (relay_manager_->toggle(relay_id)) {
+        printf("Successfully toggled %s\n", args[1].c_str());
+    } else {
+        printf("Failed to toggle %s\n", args[1].c_str());
+    }
+}
+
+void CommandInterpreter::handle_relay_status() {
+    if (!relay_manager_) {
+        printf("Relay manager not available (single board variant).\n");
+        printf("This board does not have relay control capabilities.\n");
+        return;
+    }
+
+    std::string status = relay_manager_->get_status();
+    printf("\n%s\n", status.c_str());
+}
+
+void CommandInterpreter::handle_relay_debug() {
+    if (!relay_manager_) {
+        printf("Relay manager not available (single board variant).\n");
+        printf("This board does not have relay control capabilities.\n");
+        return;
+    }
+
+    std::string debug_info = relay_manager_->get_debug_status();
+    printf("\n%s\n", debug_info.c_str());
+}
+
 void CommandInterpreter::handle_unknown_command(const std::string& command) {
     printf("Unknown command: %s\n", command.c_str());
     printf("Type 'help' for available commands.\n");
@@ -533,7 +702,13 @@ std::string CommandInterpreter::generate_help_response() {
     response += "ble_status, bt             - Show BLE status\n";
     response += "ble_name, bn <name>        - Set BLE device name\n";
     response += "ble_scan, bsc [duration]   - Scan for BLE devices\n";
-    response += "ble_debug, bd              - Show BLE debug info\n\n";
+    response += "ble_debug, bd              - Show BLE debug info\n";
+    response += "\n--- Relay Commands (Dual Relay Board) ---\n";
+    response += "relay_on, ron <relay>      - Turn on relay (1, 2, or all)\n";
+    response += "relay_off, roff <relay>    - Turn off relay (1, 2, or all)\n";
+    response += "relay_toggle, rtog <relay> - Toggle relay (1, 2, or all)\n";
+    response += "relay_status, rst          - Show relay status\n";
+    response += "relay_debug, rd            - Show detailed relay debug info\n\n";
     response += "Commands available via USB Serial JTAG and BLE\n";
     return response;
 }
@@ -777,6 +952,113 @@ std::string CommandInterpreter::generate_ble_debug_response() {
     }
     
     return ble_manager_->get_debug_status();
+}
+
+// Relay response generation methods
+std::string CommandInterpreter::generate_relay_on_response(const std::vector<std::string>& args) {
+    if (!relay_manager_) {
+        return "Relay manager not available (single board variant).";
+    }
+
+    if (args.size() < 2) {
+        return "Usage: relay_on <relay>\nOptions: 1, 2, all\nExample: relay_on 1";
+    }
+
+    std::string relay_arg = args[1];
+    std::transform(relay_arg.begin(), relay_arg.end(), relay_arg.begin(), ::tolower);
+
+    relay_control::RelayManager::RelayId relay_id;
+    if (relay_arg == "1") {
+        relay_id = relay_control::RelayManager::RelayId::RELAY_1;
+    } else if (relay_arg == "2") {
+        relay_id = relay_control::RelayManager::RelayId::RELAY_2;
+    } else if (relay_arg == "all") {
+        relay_id = relay_control::RelayManager::RelayId::ALL_RELAYS;
+    } else {
+        return "Invalid relay: " + args[1] + "\nValid options: 1, 2, all";
+    }
+
+    if (relay_manager_->turn_on(relay_id)) {
+        return "Successfully turned on " + args[1];
+    } else {
+        return "Failed to turn on " + args[1];
+    }
+}
+
+std::string CommandInterpreter::generate_relay_off_response(const std::vector<std::string>& args) {
+    if (!relay_manager_) {
+        return "Relay manager not available (single board variant).";
+    }
+
+    if (args.size() < 2) {
+        return "Usage: relay_off <relay>\nOptions: 1, 2, all\nExample: relay_off 1";
+    }
+
+    std::string relay_arg = args[1];
+    std::transform(relay_arg.begin(), relay_arg.end(), relay_arg.begin(), ::tolower);
+
+    relay_control::RelayManager::RelayId relay_id;
+    if (relay_arg == "1") {
+        relay_id = relay_control::RelayManager::RelayId::RELAY_1;
+    } else if (relay_arg == "2") {
+        relay_id = relay_control::RelayManager::RelayId::RELAY_2;
+    } else if (relay_arg == "all") {
+        relay_id = relay_control::RelayManager::RelayId::ALL_RELAYS;
+    } else {
+        return "Invalid relay: " + args[1] + "\nValid options: 1, 2, all";
+    }
+
+    if (relay_manager_->turn_off(relay_id)) {
+        return "Successfully turned off " + args[1];
+    } else {
+        return "Failed to turn off " + args[1];
+    }
+}
+
+std::string CommandInterpreter::generate_relay_toggle_response(const std::vector<std::string>& args) {
+    if (!relay_manager_) {
+        return "Relay manager not available (single board variant).";
+    }
+
+    if (args.size() < 2) {
+        return "Usage: relay_toggle <relay>\nOptions: 1, 2, all\nExample: relay_toggle 1";
+    }
+
+    std::string relay_arg = args[1];
+    std::transform(relay_arg.begin(), relay_arg.end(), relay_arg.begin(), ::tolower);
+
+    relay_control::RelayManager::RelayId relay_id;
+    if (relay_arg == "1") {
+        relay_id = relay_control::RelayManager::RelayId::RELAY_1;
+    } else if (relay_arg == "2") {
+        relay_id = relay_control::RelayManager::RelayId::RELAY_2;
+    } else if (relay_arg == "all") {
+        relay_id = relay_control::RelayManager::RelayId::ALL_RELAYS;
+    } else {
+        return "Invalid relay: " + args[1] + "\nValid options: 1, 2, all";
+    }
+
+    if (relay_manager_->toggle(relay_id)) {
+        return "Successfully toggled " + args[1];
+    } else {
+        return "Failed to toggle " + args[1];
+    }
+}
+
+std::string CommandInterpreter::generate_relay_status_response() {
+    if (!relay_manager_) {
+        return "Relay manager not available (single board variant).\nThis board does not have relay control capabilities.";
+    }
+
+    return relay_manager_->get_status();
+}
+
+std::string CommandInterpreter::generate_relay_debug_response() {
+    if (!relay_manager_) {
+        return "Relay manager not available (single board variant).\nThis board does not have relay control capabilities.";
+    }
+
+    return relay_manager_->get_debug_status();
 }
 
 } // namespace command_interface

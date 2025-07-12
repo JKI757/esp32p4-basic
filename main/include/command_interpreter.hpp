@@ -12,9 +12,13 @@
 #include <memory>
 #include "wifi_manager.hpp"
 
-// Forward declaration for BLE manager
+// Forward declarations
 namespace ble_serial {
     class BLEManager;
+}
+
+namespace relay_control {
+    class RelayManager;
 }
 
 namespace command_interface {
@@ -26,6 +30,9 @@ public:
     
     // Set BLE manager for BLE commands
     void set_ble_manager(std::shared_ptr<ble_serial::BLEManager> ble_manager);
+    
+    // Set relay manager for relay commands
+    void set_relay_manager(std::shared_ptr<relay_control::RelayManager> relay_manager);
     
     // Core functionality
     bool initialize();
@@ -51,6 +58,13 @@ public:
     void handle_ble_scan(const std::vector<std::string>& args);
     void handle_ble_debug();
     
+    // Relay command handlers
+    void handle_relay_on(const std::vector<std::string>& args);
+    void handle_relay_off(const std::vector<std::string>& args);
+    void handle_relay_toggle(const std::vector<std::string>& args);
+    void handle_relay_status();
+    void handle_relay_debug();
+    
     void handle_unknown_command(const std::string& command);
     
 private:
@@ -75,11 +89,17 @@ private:
     std::string generate_ble_name_response(const std::vector<std::string>& args);
     std::string generate_ble_scan_response(const std::vector<std::string>& args);
     std::string generate_ble_debug_response();
+    std::string generate_relay_on_response(const std::vector<std::string>& args);
+    std::string generate_relay_off_response(const std::vector<std::string>& args);
+    std::string generate_relay_toggle_response(const std::vector<std::string>& args);
+    std::string generate_relay_status_response();
+    std::string generate_relay_debug_response();
     std::string format_network_list(const std::vector<wifi_config::NetworkInfo>& networks);
     
     // Member variables
     std::shared_ptr<wifi_config::WiFiManager> wifi_manager_;
     std::shared_ptr<ble_serial::BLEManager> ble_manager_;
+    std::shared_ptr<relay_control::RelayManager> relay_manager_;
     bool initialized_;
     
     // Constants

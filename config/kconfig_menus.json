@@ -11808,7 +11808,10 @@
                                 "help": "Defines maximum number of concurrent BLE connections. For ESP32, user\nis expected to configure BTDM_CTRL_BLE_MAX_CONN from controller menu\nalong with this option. Similarly for ESP32-C3 or ESP32-S3, user is expected to\nconfigure BT_CTRL_BLE_MAX_ACT from controller menu.\nFor ESP32C2, ESP32C6 and ESP32H2, each connection will take about 1k DRAM.",
                                 "id": "BT_NIMBLE_MAX_CONNECTIONS",
                                 "name": "BT_NIMBLE_MAX_CONNECTIONS",
-                                "range": null,
+                                "range": [
+                                    1,
+                                    9
+                                ],
                                 "title": "Maximum number of concurrent connections",
                                 "type": "int"
                             },
@@ -11838,7 +11841,10 @@
                                 "help": "Defines maximum number of BLE Connection Oriented Channels. When set to (0), BLE COC is not compiled in",
                                 "id": "BT_NIMBLE_L2CAP_COC_MAX_NUM",
                                 "name": "BT_NIMBLE_L2CAP_COC_MAX_NUM",
-                                "range": null,
+                                "range": [
+                                    0,
+                                    9
+                                ],
                                 "title": "Maximum number of connection oriented channels",
                                 "type": "int"
                             },
@@ -12270,7 +12276,10 @@
                                 "help": "Time interval between RPA address change.",
                                 "id": "BT_NIMBLE_RPA_TIMEOUT",
                                 "name": "BT_NIMBLE_RPA_TIMEOUT",
-                                "range": null,
+                                "range": [
+                                    1,
+                                    41400
+                                ],
                                 "title": "RPA timeout in seconds",
                                 "type": "int"
                             },
@@ -12552,7 +12561,10 @@
                                                         "help": "Set this option to set the upper limit for number of periodic sync\nconnections. This should be less than maximum connections allowed by\ncontroller.",
                                                         "id": "BT_NIMBLE_MAX_PERIODIC_SYNCS",
                                                         "name": "BT_NIMBLE_MAX_PERIODIC_SYNCS",
-                                                        "range": null,
+                                                        "range": [
+                                                            0,
+                                                            8
+                                                        ],
                                                         "title": "Maximum number of periodic advertising syncs",
                                                         "type": "int"
                                                     },
@@ -12682,7 +12694,10 @@
                                 "help": "BLE list size",
                                 "id": "BT_NIMBLE_WHITELIST_SIZE",
                                 "name": "BT_NIMBLE_WHITELIST_SIZE",
-                                "range": null,
+                                "range": [
+                                    1,
+                                    15
+                                ],
                                 "title": "BLE white list size",
                                 "type": "int"
                             },

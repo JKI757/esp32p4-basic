@@ -51,6 +51,7 @@
 /Users/josh/Documents/Code/Waveshare/WaveshareESP32P4/esp32p4-touch-firmware/p4-base/esp-idf/driver/libdriver.a
 /Users/josh/Documents/Code/Waveshare/WaveshareESP32P4/esp32p4-touch-firmware/p4-base/esp-idf/nvs_flash/libnvs_flash.a
 /Users/josh/Documents/Code/Waveshare/WaveshareESP32P4/esp32p4-touch-firmware/p4-base/esp-idf/esp_wifi/libesp_wifi.a
+/Users/josh/Documents/Code/Waveshare/WaveshareESP32P4/esp32p4-touch-firmware/p4-base/esp-idf/bt/libbt.a
 /Users/josh/Documents/Code/Waveshare/WaveshareESP32P4/esp32p4-touch-firmware/p4-base/esp-idf/unity/libunity.a
 /Users/josh/Documents/Code/Waveshare/WaveshareESP32P4/esp32p4-touch-firmware/p4-base/esp-idf/cmock/libcmock.a
 /Users/josh/Documents/Code/Waveshare/WaveshareESP32P4/esp32p4-touch-firmware/p4-base/esp-idf/console/libconsole.a
